@@ -10,6 +10,18 @@
 
     var MIN_TOUCH_SLOP = 8 * 2 * (window.devicePixelRatio || 1);
 
+    var rAF = (function () {
+        return window[Hammer.prefixed(window, 'requestAnimationFrame')] || function (callback) {
+            window.setTimeout(callback, 1000 / 60);
+        };
+    })();
+
+    var cAF = (function() {
+        return window[Hammer.prefixed(window, 'cancelAnimationFrame')] || function (callback) {
+            window.setTimeout(callback, 1000 / 60);
+        };
+    })();
+
     function Carousel(element, options) {
         this.element = element;
         this.options = options || {};
@@ -33,7 +45,6 @@
 
         init: function() {
             this.container = this.element.querySelector('.carousel-container');
-            this.width = this.container.offsetWidth;
 
             this.slides = this.container.querySelectorAll('.carousel-slide');
             this.maxIdx = this.slides.length;
@@ -44,67 +55,50 @@
                 this.zoom = new CarouselZoom(this.mc);
             }
 
-            this.setSlide(this.idx);
+            return this.onWindowResize();
         },
 
-
         onPanMove: function(e) {
-            console.log("pan move");
             /**
              * We're zooming right now, we should exit early from here
              */
-            if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return;
+            if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return this;
 
             var dy = Math.abs(e.deltaY);
 
-            if (dy > MIN_TOUCH_SLOP) {
-                return this.onPanEnd(e);
-            }
+            if (dy > MIN_TOUCH_SLOP) return this;
 
             var dx = Math.abs(e.deltaX);
 
             if (dx > MIN_TOUCH_SLOP && dx * 0.5 > dy) {
-                e.preventDefault();
-
                 var offset = (this.width * (this.idx + 1)) - e.deltaX;
 
                 this.setOffset(offset);
             }
+
+            return this;
         },
 
-
         onSwipe: function(e) {
-            console.log("swipe");
-            if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return;
-
-            e.preventDefault();
-//            this.mc.stop(true);
+            if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return this;
 
             var idx = this.idx + (e.deltaX < 0 ? 1 : -1);
 
-            this.setSlide(idx, e.velocity, true);
+            return this.setSlide(idx, e.velocity, true);
         },
-
-
 
         onPanEnd: function(e) {
-            console.log("panend");
-            if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return;
-
-            e.preventDefault();
-//            this.mc.stop(true);
+            if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return this;
 
             if (Math.abs(e.deltaX) > this.width / 3) {
-                this.onSwipe(e);
-                return;
+                return this.onSwipe(e);
             }
 
-            this.setSlide(this.idx, e.velocity, true);
+            return this.setSlide(this.idx, e.velocity, true);
         },
 
-
         onTransitionEnd: function() {
-            if (this.zoom && this.zoom.zooming) return;
+            if (this.zoom && this.zoom.zooming) return this;
 
             var newIdx = this.idx;
 
@@ -120,9 +114,21 @@
             if (this.zoom) {
                 this.zoom.setElement(this.slides[this.idx + 1]);
             }
+
+            return this;
         },
 
+        onWindowResize: function() {
+            this.width = this.container.offsetWidth;
 
+            this.setSlide(this.idx);
+
+            if (this.zoom) {
+                this.zoom.setElement(this.slides[this.idx + 1]);
+            }
+
+            return this;
+        },
 
         setSlide: function(idx, velocity, animate) {
             velocity = velocity || 0;
@@ -140,9 +146,9 @@
             if (!animate) {
                 return this.onTransitionEnd();
             }
+
+            return this;
         },
-
-
 
         setOffset: function(offset, velocity, animate) {
             velocity = velocity || 0;
@@ -150,16 +156,16 @@
 
             /**
              * At some point in time, we can use the velocity to calculate
-             * exactly how much time the animation should be displayed
+             * the duration of the animation
              *
              * Currently, a 0.2 is fine
              */
             this.container.style[STYLE_TRANSITION_DURATION_KEY] = animate ? '0.2s' : null;
 
             this.container.style[STYLE_TRANSFORM_KEY] = this.translate3d(-offset);
+
+            return this;
         },
-
-
 
         translate3d: function(x, y, z, scale) {
             x = x ? (x + 'px') : 0;
@@ -173,8 +179,6 @@
 
             return 'translate3d(' + [x, y].join(',') + ') scale(' + scale + ')';
         },
-
-
 
         setEvents: function() {
 
@@ -200,13 +204,27 @@
 
             this.container.addEventListener('webkitTransitionEnd', this.onTransitionEnd.bind(this));
             this.container.addEventListener('transitionend', this.onTransitionEnd.bind(this));
+
+            window.addEventListener('resize', this.onWindowResize.bind(this));
+
+            return this;
         },
 
-
         destroy: function() {
+            if (this.zoom) {
+                this.zoom.destroy();
+            }
+
             if (this.mc) {
                 this.mc.destroy();
             }
+
+            this.container.removeEventListener('webkitTransitionEnd', this.onTransitionEnd.bind(this));
+            this.container.removeEventListener('transitionend', this.onTransitionEnd.bind(this));
+
+            window.removeEventListener('resize', this.onWindowResize.bind(this));
+
+            return this;
         }
 
     };
@@ -218,162 +236,219 @@
 
         //current
         this.c = {
+            // current center
+            center: {x: 0, y: 0},
             // current position
             pos: {x: 0, y: 0},
-            // last position
-            last: {x: 0, y: 0},
+            // last position and position
+            last: {x: 0, y: 0, scale: 1},
             // actual scale of the image
             scale: 1
         };
 
         this.element;
 
-        this.init();
+        this.rafId = undefined;
+
+        this.can = true;
+
+        return this.init();
     }
 
 
+    CarouselZoom.prototype = {
+        setElement: function(element) {
+            this.reset();
 
-    CarouselZoom.prototype.setElement = function(element) {
-        this.reset();
-
-        this.element = element.querySelector('.carousel-zoomable');
-
-        /**
-         * Dummy event for stopping propagation and event bubbling up the chain
-         */
-        this.element.addEventListener('webkitTransitionEnd', this.onTransitionEnd.bind(this));
-        this.element.addEventListener('transitionend', this.onTransitionEnd.bind(this));
-    }
-
-
-    CarouselZoom.prototype.init = function() {
-        this.setEvents();
-    }
-
-
-    CarouselZoom.prototype.reset = function() {
-        if (this.element) {
-            this.element.removeAttribute('style');
+            this.element = element.querySelector('.carousel-zoomable');
 
             /**
-             * Cleanup events so we don't bind more than once
+             * Dummy event for stopping propagation and event bubbling up the chain
              */
-            this.element.removeEventListener('webkitTransitionEnd', this.onTransitionEnd.bind(this));
-            this.element.removeEventListener('transitionend', this.onTransitionEnd.bind(this));
+            this.element.addEventListener('webkitTransitionEnd', this.onTransitionEnd.bind(this));
+            this.element.addEventListener('transitionend', this.onTransitionEnd.bind(this));
+
+            return this;
+        },
+
+        init: function() {
+            return this.setEvents();
+        },
+
+        reset: function() {
+            if (this.element) {
+                this.element.removeAttribute('style');
+
+                /**
+                 * Cleanup events so we don't bind more than once
+                 */
+                this.element.removeEventListener('webkitTransitionEnd', this.onTransitionEnd.bind(this));
+                this.element.removeEventListener('transitionend', this.onTransitionEnd.bind(this));
+            }
+
+            return this.resetPositionAndScale();
+        },
+
+        resetPositionAndScale: function() {
+            this.c.center.x = 0;
+            this.c.center.y = 0;
+            this.c.pos.x = this.c.last.x = 0;
+            this.c.pos.y = this.c.last.y = 0;
+            this.c.scale = this.c.last.scale = 1;
+
+            return this;
+        },
+
+        destroy: function() {
+            return this.reset();
+        },
+
+        onTransitionEnd: function(e) {
+            if (e) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+            }
+
+            if (this.c.scale < 1) {
+                return this.resetPositionAndScale().scale(0.2);
+            }
+
+            if (this.c.scale > 4) return this.setMaxZoom();
+
+            this.checkBoundaries();
+
+            return this;
+        },
+
+        checkBoundaries: function() {
+            console.log("before: ", this.c.pos, this.c.last);
+
+            if (this.c.pos.x >= 0) this.c.pos.x = this.c.last.x = 0;
+            if (this.c.pos.y >= 0) this.c.pos.y = this.c.last.y = 0;
+
+            var offsetWidth = this.element.offsetWidth,
+                offsetHeight = this.element.offsetHeight;
+
+            var w = offsetWidth * this.c.scale - offsetWidth;
+            var h = offsetHeight * this.c.scale - offsetHeight;
+
+            if (-this.c.pos.x > w) this.c.pos.x = this.c.last.x = -w;
+            if (-this.c.pos.y > h) this.c.pos.y = this.c.last.y = -h;
+
+            console.log(this.c.pos);
+
+            this.scale(0.2);
+        },
+
+        setMaxZoom: function() {
+            this.c.scale = this.c.last.scale = 4;
+            this.c.pos.x = this.c.last.x = Math.round(this.c.center.x - (this.c.center.x * this.c.scale));
+            this.c.pos.y = this.c.last.y = Math.round(this.c.center.y - (this.c.center.y * this.c.scale));
+
+            return this.scale(0.2);
+        },
+
+        onDoubleTap: function(e) {
+            this.c.center.x = e.center.x;
+            this.c.center.y = e.center.y;
+
+            if (this.c.scale >= 4) {
+                return this.resetPositionAndScale().scale(0.4).onPinchEnd(e);
+            }
+
+            return this.calculateZoomAndPosition(e).scale(0.2).onPinchEnd(e);
+        },
+
+        onPinchMove: function(e) {
+            if (e.pointers.length == 2) {
+                this.c.center.x = e.center.x;
+                this.c.center.y = e.center.y;
+
+                return this.calculateZoomAndPosition(e).requestScale();
+            } else if (this.c.scale > 1) {
+                return this.calculatePanPosition(e).requestScale();
+            }
+
+            return this;
+        },
+
+        onPinchEnd: function(e) {
+            this.c.last.x = this.c.pos.x;
+            this.c.last.y = this.c.pos.y;
+
+            this.c.last.scale = this.c.scale;
+
+            this.zooming = this.c.scale > 1;
+
+            if (this.c.last.scale > 4) {
+                this.setMaxZoom();
+            }
+
+            this.checkBoundaries();
+
+            return this;
+        },
+
+        calculateZoomAndPosition: function(e) {
+            var factor = (e.pointers.length == 2) ? e.scale : 1.5;
+
+            this.c.scale = this.c.last.scale * factor;
+
+            this.c.pos.x = Math.round(this.c.center.x - (this.c.center.x - this.c.last.x) * factor);
+            this.c.pos.y = Math.round(this.c.center.y - (this.c.center.y - this.c.last.y) * factor);
+
+            return this;
+        },
+
+        calculatePanPosition: function(e) {
+            this.c.pos.x = this.c.last.x + e.deltaX;
+            this.c.pos.y = this.c.last.y + e.deltaY;
+
+            return this;
+        },
+
+        scale: function(duration) {
+            // ignore timestamp from rAF
+            duration = (duration && duration < 2) ? duration : false;
+
+            var transition  = duration ? 'all cubic-bezier(0,0,.5,1) ' + duration + 's' : '',
+                matrixArray = [this.c.scale, 0, 0, this.c.scale, this.c.pos.x, this.c.pos.y],
+                matrix      = 'matrix(' + matrixArray.join(',') + ')';
+
+            this.element.style[STYLE_TRANSITION_KEY] = transition;
+            this.element.style[STYLE_TRANSFORM_KEY] = matrix;
+
+            if (duration && this.rafId) {
+                cAF(this.rafId);
+                this.rafId = undefined;
+            }
+
+            this.can = true;
+
+            return this;
+        },
+
+        requestScale: function() {
+            if (!this.can) return this;
+
+            this.rafId = rAF(this.scale.bind(this));
+            this.can = false;
+
+            return this;
+        },
+
+        setEvents: function() {
+            this.mc.add(new Hammer.Tap({ event: 'tap', taps: 2 }));
+            this.mc.add(new Hammer.Pinch({})).recognizeWith(this.mc.get('pan'));
+
+            this.mc
+                .on('tap', this.onDoubleTap.bind(this))
+                .on('pan pinch', this.onPinchMove.bind(this))
+                .on('panend pinchend', this.onPinchEnd.bind(this));
+
+            return this;
         }
-
-        this.c.pos.x = this.c.last.x = 0;
-        this.c.pos.y = this.c.last.y = 0;
-        this.c.scale = 1;
-    }
-
-
-    CarouselZoom.prototype.onTransitionEnd = function(e) {
-        if (e) {
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-        }
-
-        //does nothing, just prevents bubbling up
-    }
-
-
-    CarouselZoom.prototype.onDoubleTap = function(e) {
-        console.log("double tapping: ", this.c);
-        e.preventDefault();
-
-        if (this.c.scale >= 4) {
-            this.c.pos.x = 0;
-            this.c.pos.y = 0;
-            this.c.scale = 1;
-
-            this.scale(0.4);
-
-            this.onPinchEnd(e);
-
-            return;
-        }
-
-        this.calculateZoomAndPosition(e);
-
-        this.scale(0.2);
-
-        this.onPinchEnd(e);
-    },
-
-
-
-    CarouselZoom.prototype.onPinchMove = function(e) {
-        e.preventDefault();
-
-        if (e.pointers.length == 2) {
-            this.calculateZoomAndPosition(e);
-
-            this.scale();
-        } else if (this.c.scale > 1) {
-            this.calculatePanPosition(e);
-
-            this.scale();
-        }
-
-    }
-
-
-    CarouselZoom.prototype.onPinchEnd = function(e) {
-        e.preventDefault();
-
-        this.c.last.x = this.c.pos.x;
-        this.c.last.y = this.c.pos.y;
-
-        if (this.c.scale > 1) {
-            this.zooming = true;
-        } else {
-            this.zooming = false;
-        }
-
-    }
-
-
-    CarouselZoom.prototype.calculateZoomAndPosition = function(e) {
-        var center = e.center;
-        var factor = (e.pointers.length == 2) ? e.scale : 1.5;
-
-        //this assumes the widget is in fullscreen mode
-        this.c.pos.x = center.x - (center.x - this.c.pos.x) * factor;
-        this.c.pos.y = center.y - (center.y - this.c.pos.y) * factor;
-
-        this.c.scale = this.c.scale * factor;
-    }
-
-
-    CarouselZoom.prototype.calculatePanPosition = function(e) {
-        this.c.pos.x = this.c.last.x + e.deltaX;
-        this.c.pos.y = this.c.last.y + e.deltaY;
-    }
-
-
-    CarouselZoom.prototype.scale = function(duration) {
-        var transition  = duration ? 'all cubic-bezier(0,0,.5,1) ' + duration + 's' : '',
-            matrixArray = [this.c.scale, 0, 0, this.c.scale, this.c.pos.x, this.c.pos.y],
-            matrix      = 'matrix(' + matrixArray.join(',') + ')';
-
-        this.element.style[STYLE_TRANSITION_KEY] = transition;
-        this.element.style[STYLE_TRANSFORM_KEY] = matrix;
-    }
-
-
-
-    CarouselZoom.prototype.setEvents = function() {
-        this.mc.add(new Hammer.Pinch({})).recognizeWith(this.mc.get('pan'));
-
-        this.mc.add(new Hammer.Tap({ event: 'tap', taps: 2 }));
-
-        this.mc
-            .on('tap', this.onDoubleTap.bind(this))
-//            .on('panstart pinchstart', this.onPinchStart.bind(this))
-            .on('pan pinch', this.onPinchMove.bind(this))
-            .on('panend pinchend', this.onPinchEnd.bind(this));
-    }
+    };
 
 
     window.Carousel = Carousel;
