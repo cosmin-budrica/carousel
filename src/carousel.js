@@ -1,14 +1,13 @@
 (function(window, Hammer, Modernizr) {
-
-    var STYLE_TRANSITION_DURATION_KEY = Modernizr.prefixed('transitionDuration');
-
-    var STYLE_TRANSITION_KEY = Modernizr.prefixed('transition');
-
-    var STYLE_TRANSFORM_KEY = Modernizr.prefixed('transform');
-
-    var has3d = Modernizr.csstransforms3d;
+    'use strict';
 
     var MIN_TOUCH_SLOP = 8 * 2 * (window.devicePixelRatio || 1);
+
+    var STYLE_TRANSITION_DURATION_KEY = Modernizr.prefixed('transitionDuration'),
+        STYLE_TRANSITION_KEY = Modernizr.prefixed('transition'),
+        STYLE_TRANSFORM_KEY = Modernizr.prefixed('transform');
+
+    var has3d = Modernizr.csstransforms3d;
 
     var rAF = (function () {
         return window[Hammer.prefixed(window, 'requestAnimationFrame')] || function (callback) {
@@ -28,15 +27,15 @@
 
         this.options.zoomable = true;
 
-        this.container;
-        this.slides;
-        this.width;
+        this.container = undefined;
+        this.slides = undefined;
+        this.width = 0;
 
         this.idx = this.options.idx || 0;
 
         this.maxIdx = this.idx;
 
-        this.zoom;
+        this.zoom = undefined;
 
         this.init();
     }
