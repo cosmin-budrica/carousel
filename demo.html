@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=0, minimal-ui">
+        
+        <link rel="stylesheet" href="../src/carousel.css">
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.js"></script>
+
+        <script src="../src/carousel.js"></script>
+
+        <style>
+            #demo {
+                width: 600px;
+                height: 400px;
+            }
+
+            .carousel-zoomable {
+                width: 100%;
+                height: 100%;
+            }
+
+            .carousel-zoomable img {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <div id="demo" class="carousel">
+            <div class="carousel-container">
+                <div class="carousel-slide"><div class="carousel-zoomable"><img src="http://dummyimage.com/600x400/3365ff/fff&text=fifth" /></div></div>
+                <div class="carousel-slide"><div class="carousel-zoomable"><img src="http://dummyimage.com/600x400/3365aa/fff&text=first" /></div></div>
+                <div class="carousel-slide"><div class="carousel-zoomable"><img src="http://dummyimage.com/600x400/3365bb/fff&text=second" /></div></div>
+                <div class="carousel-slide"><div class="carousel-zoomable"><img src="http://dummyimage.com/600x400/3365cc/fff&text=third" /></div></div>
+                <div class="carousel-slide"><div class="carousel-zoomable"><img src="http://dummyimage.com/600x400/3365dd/fff&text=fourth" /></div></div>
+                <div class="carousel-slide"><div class="carousel-zoomable"><img src="http://dummyimage.com/600x400/3365ff/fff&text=fifth" /></div></div>
+                <div class="carousel-slide"><div class="carousel-zoomable"><img src="http://dummyimage.com/600x400/3365aa/fff&text=first" /></div></div>
+            </div>
+        </div>
+
+        <script>
+            var carousel = new Carousel(document.getElementById('demo'));
+        </script>
+
+
+    </body>
+
+</html>

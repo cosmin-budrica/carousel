@@ -1,0 +1,11 @@
+{
+    "name": "Carousel",
+    "description": "Fairly simple carousel using only vanilla JS and Hammer.js",
+    "authors": [{
+        "name": "Cosmin Budrica"
+    }],
+
+    "dependencies": {
+        "hammerjs": "2.0.8"
+    }
+}
