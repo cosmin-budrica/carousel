@@ -25,8 +25,6 @@
         this.element = element;
         this.options = options || {};
 
-        this.options.zoomable = true;
-
         this.container = undefined;
         this.slides = undefined;
         this.width = 0;
