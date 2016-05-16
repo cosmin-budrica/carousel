@@ -4,7 +4,6 @@
     var MIN_TOUCH_SLOP = 8 * 2 * (window.devicePixelRatio || 1);
 
     var STYLE_TRANSITION_DURATION_KEY = Modernizr.prefixed('transitionDuration'),
-        STYLE_TRANSITION_KEY = Modernizr.prefixed('transition'),
         STYLE_TRANSFORM_KEY = Modernizr.prefixed('transform');
 
     var has3d = Modernizr.csstransforms3d;
@@ -20,6 +19,20 @@
             window.setTimeout(callback, 1000 / 60);
         };
     })();
+
+    var translate3d = function(x, y, z, scale) {
+        x = x ? (x + 'px') : 0;
+        y = y ? (y + 'px') : 0;
+        z = z ? (z + 'px') : 0;
+        scale = scale || 1;
+
+        if (has3d) {
+            return 'translate3d(' + [x, y, z].join(',') + ') scale(' + scale + ')';
+        }
+
+        return 'translate3d(' + [x, y].join(',') + ') scale(' + scale + ')';
+    };
+
 
     function Carousel(element, options) {
         this.element = element;
@@ -180,8 +193,7 @@
              * Currently, a 0.2 is fine
              */
             this.container.style[STYLE_TRANSITION_DURATION_KEY] = animate ? '0.2s' : null;
-
-            this.container.style[STYLE_TRANSFORM_KEY] = this.translate3d(-this.offset);
+            this.container.style[STYLE_TRANSFORM_KEY] = translate3d(-this.offset);
 
             if (velocity && this.rafId) {
                 cAF(this.rafId);
@@ -202,19 +214,6 @@
             return this;
         },
 
-
-        translate3d: function(x, y, z, scale) {
-            x = x ? (x + 'px') : 0;
-            y = y ? (y + 'px') : 0;
-            z = z ? (z + 'px') : 0;
-            scale = scale || 1;
-
-            if (has3d) {
-                return 'translate3d(' + [x, y, z].join(',') + ') scale(' + scale + ')';
-            }
-
-            return 'translate3d(' + [x, y].join(',') + ') scale(' + scale + ')';
-        },
 
         setEvents: function() {
 
@@ -349,16 +348,24 @@
                 return this.resetPositionAndScale().scale(0.2);
             }
 
-            if (this.c.scale > 4) return this.setMaxZoom();
-
-            this.checkBoundaries();
+            if (this.c.scale > 4) {
+                return this.setMaxZoom().scale(0.2);
+            }
 
             return this;
         },
 
         checkBoundaries: function() {
-            if (this.c.pos.x >= 0) this.c.pos.x = this.c.last.x = 0;
-            if (this.c.pos.y >= 0) this.c.pos.y = this.c.last.y = 0;
+            var changed = false;
+
+            if (this.c.pos.x >= 0) {
+                changed = true;
+                this.c.pos.x = this.c.last.x = 0;
+            }
+            if (this.c.pos.y >= 0) {
+                changed = true;
+                this.c.pos.y = this.c.last.y = 0;
+            }
 
             var offsetWidth = this.element.offsetWidth,
                 offsetHeight = this.element.offsetHeight;
@@ -366,10 +373,16 @@
             var w = offsetWidth * this.c.scale - offsetWidth;
             var h = offsetHeight * this.c.scale - offsetHeight;
 
-            if (-this.c.pos.x > w) this.c.pos.x = this.c.last.x = -w;
-            if (-this.c.pos.y > h) this.c.pos.y = this.c.last.y = -h;
+            if (-this.c.pos.x > w) {
+                changed = true;
+                this.c.pos.x = this.c.last.x = -w;
+            }
+            if (-this.c.pos.y > h) {
+                changed = true;
+                this.c.pos.y = this.c.last.y = -h;
+            }
 
-            this.scale(0.2);
+            return changed;
         },
 
         setMaxZoom: function() {
@@ -377,7 +390,7 @@
             this.c.pos.x = this.c.last.x = Math.round(this.c.center.x - (this.c.center.x * this.c.scale));
             this.c.pos.y = this.c.last.y = Math.round(this.c.center.y - (this.c.center.y * this.c.scale));
 
-            return this.scale(0.2);
+            return this;
         },
 
         onDoubleTap: function(e) {
@@ -418,11 +431,17 @@
 
             this.zooming = this.c.scale > 1;
 
-            if (this.c.last.scale > 4) {
-                this.setMaxZoom();
+            if (this.c.last.scale < 1) {
+                return this.resetPositionAndScale().scale(0.2);
             }
 
-            this.checkBoundaries();
+            if (this.c.last.scale > 4) {
+                return this.setMaxZoom().scale(0.2);
+            }
+
+            if (this.checkBoundaries()) {
+                this.scale(0.2);
+            }
 
             return this;
         },
@@ -449,12 +468,8 @@
             // ignore timestamp from rAF
             duration = (duration && duration < 2) ? duration : false;
 
-            var transition  = duration ? 'all cubic-bezier(0,0,.5,1) ' + duration + 's' : '',
-                matrixArray = [this.c.scale, 0, 0, this.c.scale, this.c.pos.x, this.c.pos.y],
-                matrix      = 'matrix(' + matrixArray.join(',') + ')';
-
-            this.element.style[STYLE_TRANSITION_KEY] = transition;
-            this.element.style[STYLE_TRANSFORM_KEY] = matrix;
+            this.element.style[STYLE_TRANSITION_DURATION_KEY] = duration ? (duration + 's') : null;
+            this.element.style[STYLE_TRANSFORM_KEY] = translate3d(this.c.pos.x, this.c.pos.y, 0, this.c.scale);
 
             if (duration && this.rafId) {
                 cAF(this.rafId);
