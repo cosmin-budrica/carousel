@@ -64,6 +64,8 @@
         },
 
         onPanMove: function(e) {
+            e.preventDefault();
+
             /**
              * We're zooming right now, we should exit early from here
              */
@@ -85,6 +87,8 @@
         },
 
         onSwipe: function(e) {
+            e.preventDefault();
+
             if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return this;
 
             var idx = this.idx + (e.deltaX < 0 ? 1 : -1);
@@ -93,6 +97,8 @@
         },
 
         onPanEnd: function(e) {
+            e.preventDefault();
+
             if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return this;
 
             if (Math.abs(e.deltaX) > this.width / 3) {
@@ -375,6 +381,8 @@
         },
 
         onDoubleTap: function(e) {
+            e.preventDefault();
+
             this.c.center.x = e.center.x;
             this.c.center.y = e.center.y;
 
@@ -386,6 +394,8 @@
         },
 
         onPinchMove: function(e) {
+            e.preventDefault();
+
             if (e.pointers.length == 2) {
                 this.c.center.x = e.center.x;
                 this.c.center.y = e.center.y;
@@ -399,6 +409,8 @@
         },
 
         onPinchEnd: function(e) {
+            e.preventDefault();
+
             this.c.last.x = this.c.pos.x;
             this.c.last.y = this.c.pos.y;
 

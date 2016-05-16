@@ -49,6 +49,7 @@ carousel {
 .carousel-dot-container {
   width: 100%;
   bottom: 30px;
+  z-index: 1;
   position: absolute;
   text-align: center;
 }
