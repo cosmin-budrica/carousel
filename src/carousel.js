@@ -55,6 +55,8 @@
 
         this.can = true;
 
+        this.onIdxUpdateCallback = undefined;
+
         this.init();
     }
 
@@ -74,6 +76,12 @@
             }
 
             return this.onWindowResize();
+        },
+
+        onIdxUpdate: function(callback) {
+            this.onIdxUpdateCallback = callback;
+
+            return this;
         },
 
         onPanMove: function(e) {
@@ -147,6 +155,10 @@
                 this.dots[this.idx].className = 'carousel-dot active';
             }
 
+            if (this.onIdxUpdateCallback) {
+                this.onIdxUpdateCallback(this.idx);
+            }
+
             return this;
         },
 
@@ -177,6 +189,10 @@
 
             if (!animate) {
                 return this.onTransitionEnd();
+            }
+
+            if (this.onIdxUpdateCallback) {
+                this.onIdxUpdateCallback(this.idx);
             }
 
             return this;
