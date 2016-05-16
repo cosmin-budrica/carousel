@@ -1,3 +1,8 @@
+carousel {
+  display: block;
+  position: relative;
+}
+
 .carousel {
   overflow: hidden;
 }
@@ -34,6 +39,33 @@
 }
 
 .carousel-slide > .carousel-zoomable {
+  width: 100%;
+  height: 100%;
+
   -webkit-transform-origin: top left;
           transform-origin: top left;
+}
+
+.carousel-dot-container {
+  width: 100%;
+  bottom: 30px;
+  position: absolute;
+  text-align: center;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  margin: 0 3px;
+  display: inline-block;
+
+  background: rgba(255, 255, 255, 0.7);
+
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.carousel-dot.active {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.3);
 }

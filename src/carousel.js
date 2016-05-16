@@ -9,14 +9,14 @@
 
     var has3d = Modernizr.csstransforms3d;
 
-    var rAF = (function () {
-        return window[Hammer.prefixed(window, 'requestAnimationFrame')] || function (callback) {
+    var rAF = (function() {
+        return window[Hammer.prefixed(window, 'requestAnimationFrame')] || function(callback) {
             window.setTimeout(callback, 1000 / 60);
         };
     })();
 
     var cAF = (function() {
-        return window[Hammer.prefixed(window, 'cancelAnimationFrame')] || function (callback) {
+        return window[Hammer.prefixed(window, 'cancelAnimationFrame')] || function(callback) {
             window.setTimeout(callback, 1000 / 60);
         };
     })();
@@ -27,13 +27,20 @@
 
         this.container = undefined;
         this.slides = undefined;
+        this.dots = undefined;
         this.width = 0;
 
         this.idx = this.options.idx || 0;
 
         this.maxIdx = this.idx;
 
+        this.offset = 0;
+
         this.zoom = undefined;
+
+        this.rafId = undefined;
+
+        this.can = true;
 
         this.init();
     }
@@ -44,6 +51,7 @@
             this.container = this.element.querySelector('.carousel-container');
 
             this.slides = this.container.querySelectorAll('.carousel-slide');
+            this.dots = this.element.querySelectorAll('.carousel-dot');
             this.maxIdx = this.slides.length;
 
             this.setEvents();
@@ -68,9 +76,9 @@
             var dx = Math.abs(e.deltaX);
 
             if (dx > MIN_TOUCH_SLOP && dx * 0.5 > dy) {
-                var offset = (this.width * (this.idx + 1)) - e.deltaX;
+                this.offset = (this.width * (this.idx + 1)) - e.deltaX;
 
-                this.setOffset(offset);
+                this.requestSetOffset();
             }
 
             return this;
@@ -104,12 +112,20 @@
 
             this.idx = newIdx;
 
-            var offset = this.width * (this.idx + 1);
+            this.offset = this.width * (this.idx + 1);
 
-            this.setOffset(offset);
+            this.setOffset();
 
             if (this.zoom) {
                 this.zoom.setElement(this.slides[this.idx + 1]);
+            }
+
+            if (this.dots.length) {
+                for (var i = 0; i < this.dots.length; i++) {
+                    this.dots[i].className = 'carousel-dot';
+                }
+
+                this.dots[this.idx].className = 'carousel-dot active';
             }
 
             return this;
@@ -136,9 +152,9 @@
 
             this.idx = idx;
 
-            var offset = this.width * (this.idx + 1);
+            this.offset = this.width * (this.idx + 1);
 
-            this.setOffset(offset, velocity, animate);
+            this.setOffset(velocity, animate);
 
             if (!animate) {
                 return this.onTransitionEnd();
@@ -147,8 +163,8 @@
             return this;
         },
 
-        setOffset: function(offset, velocity, animate) {
-            velocity = velocity || 0;
+        setOffset: function(velocity, animate) {
+            velocity = (velocity && velocity < 2) ? velocity : 0;
             animate = animate || false;
 
             /**
@@ -159,10 +175,27 @@
              */
             this.container.style[STYLE_TRANSITION_DURATION_KEY] = animate ? '0.2s' : null;
 
-            this.container.style[STYLE_TRANSFORM_KEY] = this.translate3d(-offset);
+            this.container.style[STYLE_TRANSFORM_KEY] = this.translate3d(-this.offset);
+
+            if (velocity && this.rafId) {
+                cAF(this.rafId);
+                this.rafId = undefined;
+            }
+
+            this.can = true;
 
             return this;
         },
+
+        requestSetOffset: function() {
+            if (!this.can) return this;
+
+            this.rafId = rAF(this.setOffset.bind(this));
+            this.can = false;
+
+            return this;
+        },
+
 
         translate3d: function(x, y, z, scale) {
             x = x ? (x + 'px') : 0;
@@ -318,8 +351,6 @@
         },
 
         checkBoundaries: function() {
-            console.log("before: ", this.c.pos, this.c.last);
-
             if (this.c.pos.x >= 0) this.c.pos.x = this.c.last.x = 0;
             if (this.c.pos.y >= 0) this.c.pos.y = this.c.last.y = 0;
 
@@ -331,8 +362,6 @@
 
             if (-this.c.pos.x > w) this.c.pos.x = this.c.last.x = -w;
             if (-this.c.pos.y > h) this.c.pos.y = this.c.last.y = -h;
-
-            console.log(this.c.pos);
 
             this.scale(0.2);
         },
@@ -451,3 +480,4 @@
     window.Carousel = Carousel;
 
 })(window, Hammer, Modernizr);
+
