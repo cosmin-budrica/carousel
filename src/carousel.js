@@ -147,14 +147,6 @@
                 this.zoom.setElement(this.slides[this.idx + 1]);
             }
 
-            if (this.dots.length) {
-                for (var i = 0; i < this.dots.length; i++) {
-                    this.dots[i].className = 'carousel-dot';
-                }
-
-                this.dots[this.idx].className = 'carousel-dot active';
-            }
-
             if (this.onIdxUpdateCallback) {
                 this.onIdxUpdateCallback(this.idx);
             }
@@ -187,12 +179,14 @@
 
             this.setOffset(velocity, animate);
 
-            if (!animate) {
-                return this.onTransitionEnd();
-            }
+            this.setActiveDot();
 
             if (this.onIdxUpdateCallback) {
                 this.onIdxUpdateCallback(this.idx);
+            }
+
+            if (!animate) {
+                return this.onTransitionEnd();
             }
 
             return this;
@@ -220,6 +214,22 @@
 
             return this;
         },
+
+
+        setActiveDot: function() {
+            if (!this.dots.length) return this;
+
+            var idx = this.idx;
+            if (idx == -1) idx = this.maxIdx - 3;
+            if (idx == this.maxIdx - 2) idx = 0;
+
+            for (var i = 0; i < this.dots.length; i++) {
+                this.dots[i].className = (i == idx) ? 'carousel-dot active' : 'carousel-dot';
+            }
+
+            return this;
+        },
+
 
         requestSetOffset: function() {
             if (!this.can) return this;
