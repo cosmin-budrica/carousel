@@ -3,7 +3,7 @@
 
     var MIN_TOUCH_SLOP = 8 * 2 * (window.devicePixelRatio || 1);
 
-    var STYLE_TRANSITION_DURATION_KEY = Modernizr.prefixed('transitionDuration'),
+    var STYLE_TRANSITION_KEY = Modernizr.prefixed('transition'),
         STYLE_TRANSFORM_KEY = Modernizr.prefixed('transform');
 
     var has3d = Modernizr.csstransforms3d;
@@ -202,7 +202,7 @@
              *
              * Currently, a 0.2 is fine
              */
-            this.container.style[STYLE_TRANSITION_DURATION_KEY] = animate ? '0.2s' : null;
+            this.container.style[STYLE_TRANSITION_KEY] = animate ? 'all cubic-bezier(0,0,.5,1) 0.2s' : null;
             this.container.style[STYLE_TRANSFORM_KEY] = translate3d(-this.offset);
 
             if (velocity && this.rafId) {
@@ -494,7 +494,7 @@
             // ignore timestamp from rAF
             duration = (duration && duration < 2) ? duration : false;
 
-            this.element.style[STYLE_TRANSITION_DURATION_KEY] = duration ? (duration + 's') : null;
+            this.element.style[STYLE_TRANSITION_KEY] = duration ? ('all cubic-bezier(0,0,.5,1) ' + duration + 's') : null;
             this.element.style[STYLE_TRANSFORM_KEY] = translate3d(this.c.pos.x, this.c.pos.y, 0, this.c.scale);
 
             if (duration && this.rafId) {
