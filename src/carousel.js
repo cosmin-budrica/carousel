@@ -35,6 +35,7 @@
 
 
     function Carousel(element, options) {
+
         this.element = element;
         this.options = options || {};
 
@@ -82,6 +83,10 @@
             this.onIdxUpdateCallback = callback;
 
             return this;
+        },
+
+        setCurrentIndex: function(idx) {
+            this.setSlide(idx);
         },
 
         onPanMove: function(e) {
@@ -229,7 +234,6 @@
 
             return this;
         },
-
 
         requestSetOffset: function() {
             if (!this.can) return this;
