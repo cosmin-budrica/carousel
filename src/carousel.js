@@ -87,6 +87,8 @@
 
         setCurrentIndex: function(idx) {
             this.setSlide(idx);
+
+            return this;
         },
 
         onPanMove: function(e) {
@@ -127,7 +129,7 @@
 
             if (e.pointers.length != 1 || (this.zoom && this.zoom.zooming)) return this;
 
-            if (Math.abs(e.deltaX) > this.width / 3) {
+            if (Math.abs(e.deltaX) > 30) {
                 return this.onSwipe(e);
             }
 
