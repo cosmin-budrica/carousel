@@ -30,7 +30,7 @@
             return 'translate3d(' + [x, y, z].join(',') + ') scale(' + scale + ')';
         }
 
-        return 'translate3d(' + [x, y].join(',') + ') scale(' + scale + ')';
+        return 'translate(' + [x, y].join(',') + ') scale(' + scale + ')';
     };
 
 
@@ -210,7 +210,12 @@
              * Currently, a 0.2 is fine
              */
             this.container.style[STYLE_TRANSITION_KEY] = animate ? 'all cubic-bezier(0,0,.5,1) 0.2s' : null;
-            this.container.style[STYLE_TRANSFORM_KEY] = translate3d(-this.offset);
+            
+			if (this.container.style[STYLE_TRANSFORM_KEY]) {
+                this.container.style[STYLE_TRANSFORM_KEY] = translate3d(-this.offset);
+            } else {
+                this.container.style.transform = translate3d(-this.offset);
+            }            
 
             if (velocity && this.rafId) {
                 cAF(this.rafId);
