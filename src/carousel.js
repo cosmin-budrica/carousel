@@ -34,6 +34,111 @@
     };
 
 
+    function CarouselHover() {
+        var element, img;
+
+        var width, height, offset,
+            targetWidth, targetHeight;
+
+        //current
+        var c = {
+            pos: {x: 0, y: 0},
+
+            scale: 1.5
+        };
+
+
+        function reset() {
+            if (element) {
+                img.style[STYLE_TRANSFORM_KEY] = '';
+            }
+
+            offset = undefined;
+
+            c.pos.x = 0;
+            c.pos.y = 0;
+        }
+
+
+
+
+        function hover() {
+            img.style[STYLE_TRANSFORM_KEY] = translate3d(-c.pos.x * c.scale, -c.pos.y * c.scale, 0, c.scale);
+        }
+
+
+        function onMouseEnter() {
+            var rect = element.getBoundingClientRect();
+
+            offset = {
+                top: rect.top,
+                left: rect.left
+            };
+        }
+
+
+        function onMouseMove(e) {
+            if (!offset) { return; }
+
+            c.pos.x = e.pageX - offset.left - width / 2 - targetWidth / 2;
+            c.pos.y = e.pageY - offset.top - height / 2 - targetHeight / 2;
+
+            console.log("psotiion: ", c.pos);
+            console.log("range: ", -targetWidth, 0);
+
+//            c.pos.x = Math.max(Math.min(c.pos.x, 0), -targetWidth);
+//            c.pos.y = Math.max(Math.min(c.pos.y, 0), -targetHeight);
+
+            hover();
+        }
+
+        function onMouseOut() {
+            reset();
+        }
+
+        function setEvents() {
+            element.addEventListener('mouseenter', onMouseEnter);
+            element.addEventListener('mousemove', onMouseMove);
+            element.addEventListener('mouseout', onMouseOut);
+        }
+
+
+        function setElement(_element) {
+            reset();
+
+            element = _element;
+            img = _element.querySelector('div');
+
+            width = element.offsetWidth;
+            height = element.offsetHeight;
+
+            targetWidth = width * c.scale;
+            targetHeight = height * c.scale;
+
+            offset = element.getBoundingClientRect();
+
+            setEvents();
+        }
+
+
+        function destroy() {
+            element.removeEventListener('mouseenter', onMouseEnter);
+            element.removeEventListener('mousemove', onMouseMove);
+            element.removeEventListener('mouseout', onMouseOut);
+
+            reset();
+        }
+
+
+        return {
+            setElement: setElement,
+
+            destroy: destroy
+        };
+
+    }
+
+
     function CarouselZoom(_mc) {
         var mc = _mc;
 
@@ -300,6 +405,8 @@
 
         var zoom;
 
+        var hover;
+
         var rafId;
 
         var can = true;
@@ -375,6 +482,10 @@
 
             if (zoom) {
                 zoom.setElement(slides[idx + 1]);
+            }
+
+            if (hover) {
+                hover.setElement(slides[idx + 1]);
             }
 
             if (onIdxUpdateCallback) {
@@ -471,6 +582,10 @@
             if (zoom) {
                 zoom.setElement(slides[idx + 1]);
             }
+
+            if (hover) {
+                hover.setElement(slides[idx + 1]);
+            }
         }
 
 
@@ -506,6 +621,10 @@
                 zoom.destroy();
             }
 
+            if (hover) {
+                hover.destroy();
+            }
+
             if (mc) {
                 mc.destroy();
             }
@@ -528,6 +647,11 @@
 
             if (options.zoomable) {
                 zoom = new CarouselZoom(mc);
+            }
+
+            console.log(options);
+            if (options.hoverable) {
+                hover = new CarouselHover();
             }
 
             return onWindowResize();
