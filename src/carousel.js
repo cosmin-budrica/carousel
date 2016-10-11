@@ -4,7 +4,9 @@
     var MIN_TOUCH_SLOP = 8 * 2 * (window.devicePixelRatio || 1);
 
     var STYLE_TRANSITION_KEY = Modernizr.prefixed('transition') || 'transition',
-        STYLE_TRANSFORM_KEY = Modernizr.prefixed('transform') || 'transform';
+        STYLE_TRANSFORM_KEY = Modernizr.prefixed('transform') || 'transform',
+        STYLE_TRANSFORM_DURATION_KEY = Modernizr.prefixed('transform-duration') || 'transform-duration',
+        STYLE_TRANSFORM_ORIGIN_KEY = Modernizr.prefixed('transform-origin') || 'transform-origin';
 
     var has3d = Modernizr.csstransforms3d;
 
@@ -42,33 +44,68 @@
 
         //current
         var c = {
+            m: {x: 0, y: 0},
             pos: {x: 0, y: 0},
 
-            scale: 1.5
+            scale: 1.7
         };
 
+        var rafId, can = true;
 
         function reset() {
-            if (element) {
-                img.style[STYLE_TRANSFORM_KEY] = '';
+            offset = undefined;
+
+            if (rafId) {
+                cAF(rafId);
             }
 
-            offset = undefined;
+            if (element) {
+                img.style[STYLE_TRANSFORM_KEY] = '';
+                img.style[STYLE_TRANSFORM_ORIGIN_KEY] = '';
+                img.style[STYLE_TRANSFORM_DURATION_KEY] = '';
+            }
 
             c.pos.x = 0;
             c.pos.y = 0;
+
+            c.m.x = 0;
+            c.m.y = 0;
+
+            can = true;
         }
 
 
-
-
         function hover() {
-            img.style[STYLE_TRANSFORM_KEY] = translate3d(-c.pos.x * c.scale, -c.pos.y * c.scale, 0, c.scale);
+            if (!offset) {
+                can = true;
+                return;
+            }
+
+            c.pos.x = c.m.x - offset.left - width / 6;
+            c.pos.y = c.m.y - offset.top - height / 6;
+
+            c.pos.x = Math.max(Math.min(c.pos.x, targetWidth - width - 1), 0);
+            c.pos.y = Math.max(Math.min(c.pos.y, targetHeight - height - 1), 0);
+
+            img.style[STYLE_TRANSFORM_KEY] = translate3d(-c.pos.x, -c.pos.y, 0, c.scale);
+
+            can = true;
+        }
+
+
+        function requestHover() {
+            if (!can) { return; }
+
+            rafId = rAF(hover);
+            can = false;
         }
 
 
         function onMouseEnter() {
             var rect = element.getBoundingClientRect();
+
+            img.style[STYLE_TRANSFORM_ORIGIN_KEY] = '0 0 0';
+            img.style[STYLE_TRANSFORM_DURATION_KEY] = '0.1s';
 
             offset = {
                 top: rect.top,
@@ -78,28 +115,17 @@
 
 
         function onMouseMove(e) {
-            if (!offset) { return; }
+            c.m.x = e.pageX;
+            c.m.y = e.pageY;
 
-            c.pos.x = e.pageX - offset.left - width / 2 - targetWidth / 2;
-            c.pos.y = e.pageY - offset.top - height / 2 - targetHeight / 2;
-
-            console.log("psotiion: ", c.pos);
-            console.log("range: ", -targetWidth, 0);
-
-//            c.pos.x = Math.max(Math.min(c.pos.x, 0), -targetWidth);
-//            c.pos.y = Math.max(Math.min(c.pos.y, 0), -targetHeight);
-
-            hover();
+            requestHover();
         }
 
-        function onMouseOut() {
-            reset();
-        }
 
         function setEvents() {
             element.addEventListener('mouseenter', onMouseEnter);
             element.addEventListener('mousemove', onMouseMove);
-            element.addEventListener('mouseout', onMouseOut);
+            element.addEventListener('mouseout', reset);
         }
 
 
@@ -124,7 +150,7 @@
         function destroy() {
             element.removeEventListener('mouseenter', onMouseEnter);
             element.removeEventListener('mousemove', onMouseMove);
-            element.removeEventListener('mouseout', onMouseOut);
+            element.removeEventListener('mouseout', reset);
 
             reset();
         }
@@ -156,9 +182,7 @@
             scale: 1
         };
 
-        var rafId;
-
-        var can = true;
+        var rafId, can = true;
 
         this.zooming = false;
 
