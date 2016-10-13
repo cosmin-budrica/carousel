@@ -637,6 +637,10 @@
             if (hover) {
                 hover.setElement(slides[idx + 1]);
             }
+
+            if (onIdxUpdateCallback) {
+                onIdxUpdateCallback(idx);
+            }
         }
 
 
