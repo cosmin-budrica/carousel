@@ -184,7 +184,7 @@
 
         var rafId, can = true;
 
-        this.zooming = false;
+        var zooming = false;
 
         function resetPositionAndScale() {
             c.center.x = 0;
@@ -192,6 +192,11 @@
             c.pos.x = c.last.x = 0;
             c.pos.y = c.last.y = 0;
             c.scale = c.last.scale = 1;
+        }
+
+
+        function isZooming() {
+            return zooming;
         }
 
 
@@ -225,11 +230,17 @@
             }
 
             if (c.scale < 1) {
-                return resetPositionAndScale() && scale(0.2);
+                resetPositionAndScale();
+                scale(0.2);
+
+                return;
             }
 
             if (c.scale > 4) {
-                return setMaxZoom() && scale(0.2);
+                setMaxZoom();
+                scale(0.2);
+
+                return;
             }
         }
 
@@ -260,13 +271,6 @@
             element.addEventListener('transitionend', onTransitionEnd);
         }
 
-
-        function requestScale() {
-            if (!can) { return; }
-
-            rafId = rAF(scale);
-            can = false;
-        }
 
 
         function checkBoundaries() {
@@ -310,14 +314,20 @@
 
             c.last.scale = c.scale;
 
-            this.zooming = c.scale > 1;
+            zooming = c.scale > 1;
 
             if (c.last.scale < 1) {
-                return resetPositionAndScale() && scale(0.2);
+                resetPositionAndScale();
+                scale(0.2);
+
+                return;
             }
 
             if (c.last.scale > 4) {
-                return setMaxZoom() && scale(0.2);
+                setMaxZoom();
+                scale(0.2);
+
+                return;
             }
 
             if (checkBoundaries()) {
@@ -342,6 +352,20 @@
         }
 
 
+        function requestScale(e, type) {
+            if (!can) { return; }
+
+            if (type === 'pan') {
+                calculatePanPosition(e);
+            } else {
+                calculateZoomAndPosition(e);
+            }
+
+            rafId = rAF(scale);
+            can = false;
+        }
+
+
         function onPinchMove(e) {
             e.preventDefault();
 
@@ -349,11 +373,11 @@
                 c.center.x = e.center.x;
                 c.center.y = e.center.y;
 
-                return calculateZoomAndPosition(e) && requestScale();
+                return requestScale(e, 'zoom');
             }
 
             if (c.scale > 1) {
-                return calculatePanPosition(e) && requestScale();
+                requestScale(e, 'pan');
             }
         }
 
@@ -365,12 +389,15 @@
             c.center.y = e.center.y;
 
             if (c.scale >= 4) {
-                return resetPositionAndScale() && scale(0.4) && onPinchEnd(e);
+                resetPositionAndScale();
+                scale(0.4);
+            } else {
+                calculateZoomAndPosition(e);
+                scale(0.2);
             }
 
-            return calculateZoomAndPosition(e) && scale(0.2) && onPinchEnd(e);
+            onPinchEnd(e);
         }
-
 
 
 
@@ -385,12 +412,12 @@
         }
 
 
-        (function() {
-            setEvents();
-        }());
+        setEvents();
 
         return {
             setElement: setElement,
+
+            isZooming: isZooming,
 
             destroy: reset
         };
@@ -491,7 +518,7 @@
 
 
         function onTransitionEnd() {
-            if (zoom && zoom.zooming) { return; }
+            if (zoom && zoom.isZooming()) { return; }
 
             var newIdx = idx;
 
@@ -550,7 +577,7 @@
             /**
              * We're zooming right now, we should exit early from here
              */
-            if (e.pointers.length !== 1 || (zoom && zoom.zooming)) {
+            if (e.pointers.length !== 1 || (zoom && zoom.isZooming())) {
                 return;
             }
 
@@ -573,7 +600,7 @@
         function onSwipe(e) {
             e.preventDefault();
 
-            if (e.pointers.length !== 1 || (zoom && zoom.zooming)) {
+            if (e.pointers.length !== 1 || (zoom && zoom.isZooming())) {
                 return;
             }
 
@@ -586,7 +613,7 @@
         function onPanEnd(e) {
             e.preventDefault();
 
-            if (e.pointers.length !== 1 || (zoom && zoom.zooming)) {
+            if (e.pointers.length !== 1 || (zoom && zoom.isZooming())) {
                 return;
             }
 
@@ -673,7 +700,6 @@
                 zoom = new CarouselZoom(mc);
             }
 
-            console.log(options);
             if (options.hoverable) {
                 hover = new CarouselHover();
             }
