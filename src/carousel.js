@@ -628,7 +628,7 @@
         function onWindowResize() {
             width = container.offsetWidth;
 
-            setSlide(idx || options.idx);
+            setSlide(idx || options.idx || 0);
 
             if (zoom) {
                 zoom.setElement(slides[idx + 1]);
