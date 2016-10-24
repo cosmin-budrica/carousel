@@ -448,7 +448,7 @@
 
         var width = 0;
 
-        var idx = options.idx || undefined;
+        var idx;
 
         var maxIdx = idx;
 
@@ -628,7 +628,7 @@
         function onWindowResize() {
             width = container.offsetWidth;
 
-            setSlide(idx || 0);
+            setSlide(idx || options.idx);
 
             if (zoom) {
                 zoom.setElement(slides[idx + 1]);
