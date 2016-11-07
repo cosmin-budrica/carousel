@@ -1,5 +1,5 @@
 {
-    "name": "Carousel",
+    "name": "carousel",
     "description": "Fairly simple carousel using only vanilla JS and Hammer.js",
     "version": "0.0.1",
     "authors": [{
