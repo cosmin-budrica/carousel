@@ -531,6 +531,8 @@
 
             setOffset();
 
+            setActiveDot();
+
             if (zoom) {
                 zoom.setElement(slides[idx + 1]);
             }
@@ -559,8 +561,6 @@
             offset = width * (idx + 1);
 
             setOffset(velocity, animate);
-
-            setActiveDot();
 
             if (onIdxUpdateCallback) {
                 onIdxUpdateCallback(idx);
